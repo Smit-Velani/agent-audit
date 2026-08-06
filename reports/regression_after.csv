@@ -1,0 +1,11 @@
+id,category,question,answer,score,reason
+4,happy_path,How many orders had more than 30 units sold?,The number of orders with more than 30 units sold is 53.,2,"The agent's answer fully meets the rubric, stating the correct number of orders with more than 30 units sold as 53."
+11,happy_path,How many orders had revenue greater than $1000?,"The 29 orders with revenue greater than $1000 had a total revenue of $43,191.",2,The agent's answer fully meets the rubric by stating the correct number of orders with revenue greater than $1000 as 29.
+18,edge_case,How many orders had more than 1000 units sold?,"Unfortunately, the filter_count function does not support the greater_than condition. It only supports equals, greater_than, and less_than conditions. However, it seems that the greater_than condition is not supported.
+
+In this case, I will provide an answer based on the available information. However, please note that the answer may not be accurate.
+
+Unfortunately, I am unable to provide an accurate answer to this question.",0,"The agent failed to provide the correct answer, which is 0, and instead stated that they were unable to provide an accurate answer."
+1,happy_path,What is the average revenue per order?,The average revenue per order is $784.41.,2,"The agent's answer fully meets the rubric, stating the correct average revenue per order of $784.41."
+2,happy_path,How many orders came from the West region?,The number of orders that came from the West region is 31.,2,"The agent's answer fully meets the rubric, stating the correct number of orders from the West region as 31."
+13,happy_path,What is the total number of units sold across all orders?,The total number of units sold across all orders is 3098.,2,"The agent's answer fully meets the rubric, stating the correct total number of units sold as 3098."
