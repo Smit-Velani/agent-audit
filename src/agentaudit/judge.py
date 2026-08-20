@@ -38,8 +38,9 @@ Score the agent's answer:
 Be strict: an answer that sounds confident but is factually wrong is a 0, not a 1."""
 
 
-def build_judge(model: str = "llama-3.3-70b-versatile"):
-    llm = ChatGroq(model=model, temperature=0, max_tokens=150)
+def build_judge(model: str = None):
+    from agent import JUDGE_A_MODEL
+    llm = ChatGroq(model=model or JUDGE_A_MODEL, temperature=0, max_tokens=150)
     return llm.with_structured_output(GradeResult)
 
 

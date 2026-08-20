@@ -11,7 +11,7 @@ import time
 import pandas as pd
 from groq import APIStatusError
 
-from agent import build_csv_agent, ask
+from agent import build_csv_agent, ask, JUDGE_A_MODEL, JUDGE_B_MODEL
 from judge import build_judge, grade
 
 GOLDEN_SET_PATH = "data/golden_set.jsonl"
@@ -57,8 +57,8 @@ def main():
 
     print("Building agent and two independent judges...")
     agent = build_csv_agent()
-    judge_a = build_judge(model="llama-3.3-70b-versatile")
-    judge_b = build_judge(model="llama-3.1-8b-instant")
+    judge_a = build_judge(model=JUDGE_A_MODEL)
+    judge_b = build_judge(model=JUDGE_B_MODEL)
 
     for i, task in enumerate(remaining, 1):
         print(f"[{i}/{len(remaining)}] {task['question'][:60]}...", flush=True)

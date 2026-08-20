@@ -23,6 +23,19 @@ def select_subset(df, n_target=15, seed=42):
     return pd.concat([disagreements, fill]).sort_values("id")
 
 
+def select_unscored(df):
+    """
+    Everything not yet hand-scored.
+
+    The original subset deliberately oversampled judge disagreements, which
+    are the hardest cases -- good for measuring kappa cheaply, but it means
+    the scored sample is not representative and the interval around it is
+    wide. Scoring the remainder removes both problems.
+    """
+    scored = df.human_score.notna() & (df.human_score.astype(str).str.strip() != "")
+    return df[~scored].sort_values("id")
+
+
 def main():
     df = pd.read_csv(INPUT_PATH)
     subset = select_subset(df)

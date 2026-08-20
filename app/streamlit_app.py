@@ -398,10 +398,10 @@ if st.session_state.df is not None:
                         st.session_state.messages.append({"role":"user","content":q})
                         show_loader(CHAT_MSGS, "chat_sq")
                         try:
-                            from agent import ask_safe_csv
+                            from agent import ask_safe_csv, JUDGE_A_MODEL
                             from judge import build_judge, grade
                             result = ask_safe_csv(st.session_state.agent, q)
-                            j = build_judge(model="llama-3.3-70b-versatile")
+                            j = build_judge(model=JUDGE_A_MODEL)
                             g = grade(j, q, result["answer"], "Must state a specific correct number from the data.")
                             st.session_state.messages.append({
                                 "role":"scout","content":result["answer"],
@@ -434,10 +434,10 @@ if st.session_state.df is not None:
                 st.session_state.messages.append({"role":"user","content":question})
                 show_loader(CHAT_MSGS, "chat_input")
                 try:
-                    from agent import ask_safe_csv
+                    from agent import ask_safe_csv, JUDGE_A_MODEL
                     from judge import build_judge, grade
                     result = ask_safe_csv(st.session_state.agent, question)
-                    j = build_judge(model="llama-3.3-70b-versatile")
+                    j = build_judge(model=JUDGE_A_MODEL)
                     g = grade(j, question, result["answer"], "Must state a specific correct number from the data.")
                     st.session_state.messages.append({
                         "role":"scout","content":result["answer"],

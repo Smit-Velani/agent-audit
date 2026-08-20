@@ -16,6 +16,20 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Model configuration.
+#
+# Groq deprecated llama-3.3-70b-versatile and llama-3.1-8b-instant on
+# 17 June 2026. The evaluation in reports/ was run on that pair; the
+# harness now runs on their recommended replacements, so the historical
+# numbers describe models that are no longer available.
+#
+# The IDs live here rather than scattered across six files because the
+# deprecation broke every one of them at once.
+
+AGENT_MODEL = "openai/gpt-oss-20b"      # was llama-3.1-8b-instant
+JUDGE_A_MODEL = "openai/gpt-oss-120b"   # was llama-3.3-70b-versatile
+JUDGE_B_MODEL = "openai/gpt-oss-20b"    # was llama-3.1-8b-instant
+
 _df: pd.DataFrame = pd.DataFrame()
 
 def set_dataframe(df: pd.DataFrame):
@@ -139,9 +153,115 @@ def output_guardrail(answer: str):
             return False, marker
     return True, None
 
+def _dataset_vocabulary(df, max_unique=50):
+    """
+    Every categorical value the agent could legitimately mention.
+
+    Only low-cardinality non-numeric columns are collected. A column with
+    hundreds of distinct values is a free-text or ID field, not a category,
+    and treating it as vocabulary would flood the check with noise.
+
+    Column selection uses a negative test -- exclude numeric and datetime --
+    rather than testing for object dtype. pandas 3.x introduced a dedicated
+    string dtype, so an == object check silently matches nothing there and
+    returns an empty vocabulary, which makes the guardrail fail open with no
+    visible error.
+    """
+    import pandas as pd
+
+    vocab = set()
+    for col in df.columns:
+        s = df[col]
+        if pd.api.types.is_numeric_dtype(s) or pd.api.types.is_datetime64_any_dtype(s):
+            continue
+        vals = s.dropna().unique()
+        if 0 < len(vals) <= max_unique:
+            vocab.update(str(v).strip().lower() for v in vals)
+    return vocab
+
+
+def grounding_guardrail(answer: str, df=None, min_len=4):
+    """
+    Catches domain hallucination: category names that appear in the answer
+    but exist nowhere in the data.
+
+    The red-team pass found this gap directly. Task 27 produced a customer
+    segment called "Premium" -- the real dataset has Consumer, Enterprise and
+    SMB. Neither the injection nor the tool-leak guardrail fired, because the
+    answer matched no known attack signature. It was simply invented, and
+    both keyword filters are blind to that by construction.
+
+    The check works in the opposite direction from the other two. Instead of
+    a denylist of bad patterns, it builds an allowlist from the data itself,
+    then flags capitalised terms that look like category names but are not in
+    it. That inversion is the point: you cannot enumerate everything a model
+    might fabricate, but you can enumerate what is real.
+
+    Matching is exact, not substring. An earlier version accepted a candidate
+    if it merely overlapped a real value, which let "Northwest" through on
+    the strength of the real region "North" -- precisely the near-miss
+    fabrication most worth catching.
+
+    Returns (ok, offending_term). Fails open when no dataframe is loaded --
+    with no vocabulary to check against, silence is safer than guessing.
+    """
+    import re
+
+    if df is None or getattr(df, "empty", True):
+        return True, None
+
+    vocab = _dataset_vocabulary(df)
+    if not vocab:
+        return True, None
+
+    vocab_words = set()
+    for v in vocab:
+        vocab_words.update(v.split())
+
+    columns = set()
+    for c in df.columns:
+        c = str(c).strip().lower()
+        columns.add(c)
+        columns.update(re.split(r"[_\s]+", c))
+
+    allowed = vocab | vocab_words | columns
+
+    stopwords = {
+        "the", "this", "that", "these", "those", "there", "their", "then",
+        "however", "based", "note", "total", "average", "count", "sum",
+        "data", "dataset", "column", "columns", "value", "values", "result",
+        "results", "answer", "question", "here", "each", "with", "from",
+        "and", "but", "not", "all", "any", "one", "two", "three", "four",
+        "using", "found", "please", "sorry", "cannot", "unable", "would",
+        "should", "could", "must", "have", "has", "had", "does", "did",
+        "are", "you", "your", "highest", "lowest", "mean", "median",
+        "orders", "order", "customers", "customer", "segment", "segments",
+        "grouped", "group", "computed", "compute", "across", "between",
+        "approximately", "about", "which", "what", "when", "where",
+    }
+
+    candidates = []
+    candidates += re.findall(r"['\"]([A-Za-z][A-Za-z ]{%d,})['\"]" % (min_len - 1), answer)
+
+    for sentence in re.split(r"(?<=[.!?])\s+", answer):
+        words = sentence.split()
+        for w in words[1:]:
+            w = w.strip(".,;:!?()[]{}'\"$")
+            if re.fullmatch(r"[A-Z][A-Za-z]{%d,}" % (min_len - 1), w):
+                candidates.append(w)
+
+    for term in candidates:
+        t = term.strip().lower()
+        if not t or t in stopwords or t in allowed:
+            continue
+        if all(w in allowed or w in stopwords for w in t.split()):
+            continue
+        return False, term.strip()
+
+    return True, None
 
 def build_csv_agent():
-    llm = ChatGroq(model="llama-3.1-8b-instant", temperature=0, max_tokens=400)
+    llm = ChatGroq(model=AGENT_MODEL, temperature=0, max_tokens=400)
     tools = [list_columns, compute_stat, filter_count, get_sample_rows]
     return create_agent(llm, tools, system_prompt=CSV_SYSTEM_PROMPT)
 
@@ -197,6 +317,16 @@ def ask_safe_csv(agent, question: str) -> dict:
             "answer": "That response contained restricted content and was blocked.",
             "blocked_by": "output_guardrail", "blocked_reason": out_reason,
             "tool_calls": [], "total_tokens": 0, "latency_seconds": 0, "error": None,
+        }
+    ground_ok, ground_term = grounding_guardrail(trace["answer"], _df)
+    if not ground_ok:
+        return {
+            **trace,
+            "answer": trace["answer"] + (
+                f"\n\n[Grounding check: '{ground_term}' does not appear anywhere "
+                f"in this dataset. Treat that part of the answer as unverified.]"
+            ),
+            "blocked_by": "grounding_guardrail", "blocked_reason": ground_term,
         }
     return {**trace, "blocked_by": None, "blocked_reason": None}
 
