@@ -58,14 +58,13 @@ html,body,[class*="css"]{font-family:'Space Grotesk',sans-serif;}
 .scout-fab-btn{width:56px;height:56px;background:#7c3aed;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 4px 20px rgba(124,58,237,.5);animation:fabpulse 2s infinite;border:3px solid #c4b5fd;}
 @keyframes fabpulse{0%{box-shadow:0 0 0 0 rgba(124,58,237,.6);}70%{box-shadow:0 0 0 16px rgba(124,58,237,0);}100%{box-shadow:0 0 0 0 rgba(124,58,237,0);}}
 .scout-fab-lbl{font-size:10px;font-weight:700;color:#7c3aed;letter-spacing:.06em;font-family:'JetBrains Mono',monospace;}
-@keyframes scoutspin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
 @keyframes scoutdot{0%,80%,100%{transform:scale(0.6);opacity:.4;}40%{transform:scale(1);opacity:1;}}
 @keyframes scoutfade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
 .scout-loader{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(14,10,44,0.93);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
-.scout-loader-icon{display:none;}
-.scout-loader-name{font-family:'JetBrains Mono',monospace;font-size:13px;color:#a78bfa;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;}
-.scout-loader-msg{font-family:'JetBrains Mono',monospace;font-size:12px;color:#7c6fcd;letter-spacing:.06em;min-height:20px;text-align:center;max-width:280px;line-height:1.6;}
-.scout-loader-dots{margin-top:22px;display:flex;gap:7px;}
+.scout-loader-name{font-family:'JetBrains Mono',monospace;font-size:13px;color:#a78bfa;letter-spacing:.1em;text-transform:uppercase;margin-bottom:20px;}
+.slt{font-family:'JetBrains Mono',monospace;font-size:13px;color:#a78bfa;letter-spacing:.06em;opacity:.2;transition:opacity .35s;text-align:center;padding:4px 8px;}
+.scout-loader-msg{font-family:'JetBrains Mono',monospace;font-size:11px;color:#4338ca;letter-spacing:.06em;min-height:18px;text-align:center;margin-top:16px;}
+.scout-loader-dots{margin-top:18px;display:flex;gap:7px;}
 .scout-loader-dot{width:7px;height:7px;background:#7c3aed;border-radius:50%;}
 .scout-loader-dot:nth-child(1){animation:scoutdot 1.4s ease-in-out infinite;}
 .scout-loader-dot:nth-child(2){animation:scoutdot 1.4s ease-in-out 0.2s infinite;}
@@ -77,20 +76,21 @@ h1,h2,h3{color:#0f172a!important;font-weight:700!important;}
 </style>
 """, unsafe_allow_html=True)
 
-UPLOAD_MSGS = ["Analyzing your dataset...", "Running column profiling...",
-    "Detecting outliers...", "Computing correlations...",
-    "Generating charts...", "Scout is getting ready..."]
-CHAT_MSGS = ["Scout is thinking...", "Calling data tools...",
-    "Verifying with real numbers...", "Scoring with judge..."]
+UPLOAD_MSGS = ["Analyzing dataset...", "Running profiling...", "Detecting outliers...", "Computing charts..."]
+CHAT_MSGS = ["Scout is thinking...", "Calling data tools...", "Verifying numbers...", "Scoring with judge..."]
 
 
 def show_loader(messages, key="loader"):
     msgs_js = str(messages).replace("'", '"')
     st.markdown(f"""
     <div class="scout-loader" id="sl_{key}">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 24px;margin-bottom:20px;"><div class="slt" id="slt0" style="font-family:JetBrains Mono,monospace;font-size:12px;color:#4338ca;letter-spacing:.06em;opacity:.3;transition:opacity .4s;">Analyzing dataset</div><div class="slt" id="slt1" style="font-family:JetBrains Mono,monospace;font-size:12px;color:#4338ca;letter-spacing:.06em;opacity:.3;transition:opacity .4s;">Running profiling</div><div class="slt" id="slt2" style="font-family:JetBrains Mono,monospace;font-size:12px;color:#4338ca;letter-spacing:.06em;opacity:.3;transition:opacity .4s;">Detecting outliers</div><div class="slt" id="slt3" style="font-family:JetBrains Mono,monospace;font-size:12px;color:#4338ca;letter-spacing:.06em;opacity:.3;transition:opacity .4s;">Computing charts</div></div><script>var _ti=0;var _ts=document.querySelectorAll(".slt");function _tn(){_ts.forEach(function(e,i){e.style.opacity=i===_ti?"1":"0.3";});_ti=(_ti+1)%_ts.length;}if(_ts.length)_tn();setInterval(_tn,600);</script>
         <div class="scout-loader-name">Scout</div>
-        <div class="scout-loader-msg" id="slm_{key}"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px 32px;margin-bottom:8px;">
+            <div class="slt" id="slt0_{key}">{messages[0]}</div>
+            <div class="slt" id="slt1_{key}">{messages[1]}</div>
+            <div class="slt" id="slt2_{key}">{messages[2]}</div>
+            <div class="slt" id="slt3_{key}">{messages[3] if len(messages)>3 else ''}</div>
+        </div>
         <div class="scout-loader-dots">
             <div class="scout-loader-dot"></div>
             <div class="scout-loader-dot"></div>
@@ -99,15 +99,19 @@ def show_loader(messages, key="loader"):
     </div>
     <script>
     (function(){{
-        var msgs={msgs_js};
-        var i=0;
-        var el=document.getElementById("slm_{key}");
-        if(el){{el.innerText=msgs[0];}}
-        setInterval(function(){{
-            i=(i+1)%msgs.length;
-            if(el){{el.style.animation="none";void el.offsetHeight;
-                el.style.animation="scoutfade 0.5s ease";el.innerText=msgs[i];}}
-        }},1800);
+        var ids=["slt0_{key}","slt1_{key}","slt2_{key}","slt3_{key}"];
+        var si=0;
+        function blinkNext(){{
+            ids.forEach(function(id){{
+                var e=document.getElementById(id);
+                if(e) e.style.opacity="0.2";
+            }});
+            var el=document.getElementById(ids[si]);
+            if(el) el.style.opacity="1";
+            si=(si+1)%ids.length;
+        }}
+        blinkNext();
+        setInterval(blinkNext, 600);
     }})();
     </script>
     """, unsafe_allow_html=True)
@@ -234,7 +238,7 @@ def generate_pdf(df, insights, charts, messages):
         story.append(Paragraph("Charts", H))
         for title, fig in charts:
             try:
-                img_bytes = fig.to_image(format="png", width=500, height=200, scale=2, )
+                img_bytes = fig.to_image(format="png", width=500, height=200, scale=1)
                 story.append(Paragraph(title, B))
                 story.append(RLImage(io.BytesIO(img_bytes), width=160*mm, height=64*mm))
                 story.append(Spacer(1,3*mm))
@@ -460,6 +464,3 @@ if st.session_state.df is not None:
         <div class="scout-fab-lbl">SCOUT</div>
     </div>
     """, unsafe_allow_html=True)
-
-
-

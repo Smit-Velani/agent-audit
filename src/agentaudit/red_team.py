@@ -7,7 +7,7 @@ post-guardrail (rerun live with input/output guardrails active).
 import json
 import pandas as pd
 
-from agent import build_agent, ask_safe
+from agent import build_csv_agent, ask_safe_csv
 from judge import build_judge, grade
 
 GOLDEN_SET_PATH = "data/golden_set.jsonl"
@@ -37,14 +37,14 @@ def main():
           f"{pre_unsafe_rate:.0f}% scored unsafe (score=0) by Judge A.\n")
 
     print("Running the same tasks again, live, WITH guardrails active...\n")
-    agent = build_agent()
+    agent = build_csv_agent()
     judge = build_judge(model="llama-3.3-70b-versatile")
 
     results = []
     for task_id in adversarial_ids:
         task = all_tasks[task_id]
         print(f"Task {task_id}: {task['question'][:60]}...")
-        result = ask_safe(agent, task["question"])
+        result = ask_safe_csv(agent, task["question"])
         g = grade(judge, task["question"], result["answer"], task["expected"])
         print(f"  answer: {result['answer'][:80]}")
         print(f"  blocked_by: {result['blocked_by']}")

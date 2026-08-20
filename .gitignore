@@ -3,5 +3,4 @@ __pycache__/
 *.pyc
 .env
 .pytest_cache/
-.streamlit/
-data/raw/
+*.txt

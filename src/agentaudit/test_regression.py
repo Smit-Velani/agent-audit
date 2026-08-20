@@ -8,7 +8,7 @@ import sys
 import json
 import pandas as pd
 
-from agent import build_agent, ask
+from agent import build_csv_agent, ask
 from judge import build_judge, grade
 
 GOLDEN_SET_PATH = "data/golden_set.jsonl"
@@ -35,7 +35,7 @@ def main():
     all_tasks = load_golden_set(GOLDEN_SET_PATH)
     tasks = [all_tasks[i] for i in SUBSET_IDS]
 
-    agent = build_agent()
+    agent = build_csv_agent()
     judge = build_judge(model="llama-3.3-70b-versatile")
 
     results = []

@@ -9,3 +9,9 @@ scikit-learn
 python-dotenv
 pytest
 streamlit
+plotly
+pdfplumber
+python-docx
+Pillow
+reportlab
+kaleido==0.2.1

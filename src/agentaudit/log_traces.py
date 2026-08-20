@@ -10,7 +10,7 @@ future run_eval.py run will also append here going forward.
 import json
 import time
 
-from agent import build_agent, ask_with_trace
+from agent import build_csv_agent, ask_csv
 
 TRACE_PATH = "reports/traces.jsonl"
 
@@ -43,10 +43,10 @@ def log_trace(question, trace, version="v1"):
 
 
 def main():
-    agent = build_agent()
+    agent = build_csv_agent()
     for q in SAMPLE_QUESTIONS:
         print(f"Running: {q}")
-        trace = ask_with_trace(agent, q)
+        trace = ask_csv(agent, q)
         record = log_trace(q, trace)
         print(f"  answer: {record['answer'][:80]}")
         print(f"  tool_calls: {record['tool_calls']}")
