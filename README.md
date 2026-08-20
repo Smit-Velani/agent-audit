@@ -9,6 +9,8 @@
 
 > An AI agent evaluation harness built around **Scout**, a ReAct-style data analyst that answers questions about any uploaded CSV. The project is less about building the agent than about proving whether it works: a hand-written golden set, dual LLM judges validated against human scoring, regression detection, adversarial red-teaming, and a grounding guardrail built to close a gap the red team found.
 
+**Live demo:** https://agentaudit-scout.streamlit.app/
+
 ---
 
 ## Why this exists
