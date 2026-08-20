@@ -9,6 +9,26 @@ from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable, Image as RLImage
 from reportlab.lib.enums import TA_CENTER
 import sys, os
+
+# The golden set gives each task a rubric containing the true answer, so the
+# judge can check correctness directly. Live chat has no ground truth -- the
+# judge sees only the question and the answer, and cannot know whether
+# "27.73" is right. Asking it to confirm correctness anyway makes it fail
+# every correct answer, since it can never satisfy the rubric.
+#
+# So the live rubric grades what is actually checkable without the data:
+# whether the answer is specific and tool-grounded rather than hedged or
+# invented. Correctness is verified offline against the golden set instead.
+GENERIC_RUBRIC = (
+    "Judge whether the answer is a direct, specific response that reports "
+    "concrete values rather than hedging, guessing, or refusing. Score 2 if "
+    "it gives specific figures or a clear factual statement. Score 1 if it "
+    "is vague, partial, or hedged. Score 0 only if it refuses, admits "
+    "guessing, or is self-evidently fabricated. Do not penalise the answer "
+    "for numbers you cannot independently verify -- you do not have access "
+    "to the underlying dataset."
+)
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src", "agentaudit"))
 
 st.set_page_config(page_title="AgentAudit · Scout", layout="wide", initial_sidebar_state="collapsed")
@@ -402,7 +422,7 @@ if st.session_state.df is not None:
                             from judge import build_judge, grade
                             result = ask_safe_csv(st.session_state.agent, q)
                             j = build_judge(model=JUDGE_A_MODEL)
-                            g = grade(j, q, result["answer"], "Must state a specific correct number from the data.")
+                            g = grade(j, q, result["answer"], GENERIC_RUBRIC)
                             st.session_state.messages.append({
                                 "role":"scout","content":result["answer"],
                                 "score":g["score"],"judge_reason":g["reason"],
@@ -438,7 +458,7 @@ if st.session_state.df is not None:
                     from judge import build_judge, grade
                     result = ask_safe_csv(st.session_state.agent, question)
                     j = build_judge(model=JUDGE_A_MODEL)
-                    g = grade(j, question, result["answer"], "Must state a specific correct number from the data.")
+                    g = grade(j, question, result["answer"], GENERIC_RUBRIC)
                     st.session_state.messages.append({
                         "role":"scout","content":result["answer"],
                         "score":g["score"],"judge_reason":g["reason"],
