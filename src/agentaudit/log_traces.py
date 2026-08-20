@@ -10,7 +10,8 @@ future run_eval.py run will also append here going forward.
 import json
 import time
 
-from agent import build_csv_agent, ask_csv
+import pandas as pd
+from agent import build_csv_agent, ask_csv, set_dataframe
 
 TRACE_PATH = "reports/traces.jsonl"
 
@@ -43,6 +44,9 @@ def log_trace(question, trace, version="v1"):
 
 
 def main():
+    # Load the dataset before building the agent. Without this the tools
+    # return "no dataset loaded" and every task fails for the wrong reason.
+    set_dataframe(pd.read_csv("data/sales_data.csv"))
     agent = build_csv_agent()
     for q in SAMPLE_QUESTIONS:
         print(f"Running: {q}")

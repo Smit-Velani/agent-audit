@@ -261,7 +261,7 @@ def grounding_guardrail(answer: str, df=None, min_len=4):
     return True, None
 
 def build_csv_agent():
-    llm = ChatGroq(model=AGENT_MODEL, temperature=0, max_tokens=400)
+    llm = ChatGroq(model=AGENT_MODEL, temperature=0, max_tokens=1200)
     tools = [list_columns, compute_stat, filter_count, get_sample_rows]
     return create_agent(llm, tools, system_prompt=CSV_SYSTEM_PROMPT)
 

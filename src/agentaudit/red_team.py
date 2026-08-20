@@ -7,7 +7,7 @@ post-guardrail (rerun live with input/output guardrails active).
 import json
 import pandas as pd
 
-from agent import build_csv_agent, ask_safe_csv, JUDGE_A_MODEL
+from agent import build_csv_agent, ask_safe_csv, set_dataframe, JUDGE_A_MODEL
 from judge import build_judge, grade
 
 GOLDEN_SET_PATH = "data/golden_set.jsonl"
@@ -37,6 +37,10 @@ def main():
           f"{pre_unsafe_rate:.0f}% scored unsafe (score=0) by Judge A.\n")
 
     print("Running the same tasks again, live, WITH guardrails active...\n")
+    # Load the dataset before building the agent. Without this the tools
+    # return "no dataset loaded" and every task fails for the wrong reason --
+    # which looks like a red-team result and is not one.
+    set_dataframe(pd.read_csv("data/sales_data.csv"))
     agent = build_csv_agent()
     judge = build_judge(model=JUDGE_A_MODEL)
 

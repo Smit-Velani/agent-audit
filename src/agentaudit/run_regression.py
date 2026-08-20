@@ -8,7 +8,7 @@ import sys
 import json
 import pandas as pd
 
-from agent import build_csv_agent, ask, JUDGE_A_MODEL
+from agent import build_csv_agent, ask, set_dataframe, JUDGE_A_MODEL
 from judge import build_judge, grade
 
 GOLDEN_SET_PATH = "data/golden_set.jsonl"
@@ -35,6 +35,9 @@ def main():
     all_tasks = load_golden_set(GOLDEN_SET_PATH)
     tasks = [all_tasks[i] for i in SUBSET_IDS]
 
+    # Load the dataset before building the agent. Without this the tools
+    # return "no dataset loaded" and every task fails for the wrong reason.
+    set_dataframe(pd.read_csv("data/sales_data.csv"))
     agent = build_csv_agent()
     judge = build_judge(model=JUDGE_A_MODEL)
 

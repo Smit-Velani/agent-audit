@@ -11,7 +11,7 @@ import time
 import pandas as pd
 from groq import APIStatusError
 
-from agent import build_csv_agent, ask, JUDGE_A_MODEL, JUDGE_B_MODEL
+from agent import build_csv_agent, ask, set_dataframe, JUDGE_A_MODEL, JUDGE_B_MODEL
 from judge import build_judge, grade
 
 GOLDEN_SET_PATH = "data/golden_set.jsonl"
@@ -56,6 +56,9 @@ def main():
         return
 
     print("Building agent and two independent judges...")
+    # Load the dataset before building the agent. Without this the tools
+    # return "no dataset loaded" and every task fails for the wrong reason.
+    set_dataframe(pd.read_csv("data/sales_data.csv"))
     agent = build_csv_agent()
     judge_a = build_judge(model=JUDGE_A_MODEL)
     judge_b = build_judge(model=JUDGE_B_MODEL)
